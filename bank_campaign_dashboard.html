@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bank campaign model dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  --bg: #F2F4F3;
+  --surface: #FFFFFF;
+  --ink: #12263A;
+  --muted: #566878;
+  --line: #D3DADF;
+  --accent: #0B6E5F;
+  --accent-soft: #D9EEEA;
+  --amber: #A8680A;
+  --danger: #B42318;
+  --serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1A22; --surface: #15252F; --ink: #E8EEF2; --muted: #9FB0BC; --line: #2A3E4B;
+    --accent: #3CC2A8; --accent-soft: #17383A; --amber: #E3B04B; --danger: #F07167;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1A22; --surface: #15252F; --ink: #E8EEF2; --muted: #9FB0BC; --line: #2A3E4B;
+  --accent: #3CC2A8; --accent-soft: #17383A; --amber: #E3B04B; --danger: #F07167;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 64px); }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--sans); font-size: 16px; line-height: 1.55;
+}
+h1, h2, h3 { font-family: var(--serif); font-weight: 600; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2.1rem, 5vw, 3.4rem); letter-spacing: -0.01em; }
+h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin-bottom: 8px; }
+h3 { font-size: 1.15rem; margin-bottom: 6px; }
+p { margin: 0 0 12px; max-width: 70ch; }
+a { color: var(--accent); }
+
+.nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10;
+  background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.nav-in { max-width: 1120px; margin: 0 auto; padding: 10px 20px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+.brand { font-family: var(--serif); font-weight: 600; font-size: 1.05rem; margin-right: auto; }
+.nav a { color: var(--muted); text-decoration: none; font-size: 0.92rem; padding: 4px 0; border-bottom: 2px solid transparent; }
+.nav a:hover { color: var(--ink); border-bottom-color: var(--accent); }
+.nav a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+main { max-width: 1120px; margin: 0 auto; padding: 0 20px 64px; }
+section { padding: 48px 0 8px; }
+.hero { padding-top: 40px; }
+.lede { font-size: 1.12rem; color: var(--muted); margin-top: 14px; }
+
+.sim { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 28px; margin-top: 28px; align-items: start; }
+@media (max-width: 860px) { .sim { grid-template-columns: 1fr; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 20px; }
+.field { margin-bottom: 18px; }
+.field label { display: flex; justify-content: space-between; font-weight: 500; margin-bottom: 6px; }
+.field output { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 600; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+input[type=number] { width: 100%; padding: 8px 10px; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 4px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pair .field { margin-bottom: 0; }
+button.btn {
+  font: inherit; font-weight: 500; cursor: pointer; color: var(--ink); background: var(--accent-soft);
+  border: 1px solid var(--accent); border-radius: 4px; padding: 8px 12px; margin-top: 16px; width: 100%;
+}
+button.btn:hover { background: var(--accent); color: var(--surface); }
+
+.profit { margin-bottom: 4px; }
+.profit .num { font-family: var(--serif); font-size: clamp(3rem, 7vw, 4.4rem); font-weight: 600; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+.profit .cap { color: var(--muted); font-size: 0.95rem; }
+dl.reads { display: grid; grid-template-columns: 1fr; gap: 0; margin: 16px 0 0; }
+dl.reads div { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); }
+dl.reads dt { color: var(--muted); }
+dl.reads dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.charts { display: grid; gap: 20px; }
+figure { margin: 0; }
+figcaption { color: var(--muted); font-size: 0.88rem; margin-top: 6px; }
+svg.chart { width: 100%; height: auto; display: block; }
+svg text { font-family: var(--sans); fill: var(--muted); font-size: 11px; }
+svg text.strong { fill: var(--ink); font-weight: 600; }
+svg .axis { stroke: var(--line); stroke-width: 1; }
+svg .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 3; }
+svg .model { stroke: var(--accent); stroke-width: 2.5; fill: none; }
+svg .random { stroke: var(--amber); stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+svg .mark { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+svg .guide { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; }
+svg .b-accent { fill: var(--accent); }
+svg .b-amber { fill: var(--amber); }
+svg .b-danger { fill: var(--danger); }
+svg .b-muted { fill: var(--line); }
+svg .refline { stroke: var(--amber); stroke-width: 1.5; stroke-dasharray: 4 3; }
+
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 20px; }
+@media (max-width: 860px) { .two { grid-template-columns: 1fr; } }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; margin: 6px 0 14px; }
+.seg button { font: inherit; padding: 7px 14px; border: 0; background: var(--surface); color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); font-weight: 600; }
+table { border-collapse: collapse; width: 100%; font-size: 0.93rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--muted); font-weight: 500; }
+tr.best td { font-weight: 600; color: var(--accent); }
+ul.plain { margin: 0; padding-left: 20px; }
+ul.plain li { margin-bottom: 8px; max-width: 70ch; }
+.note { color: var(--muted); font-size: 0.9rem; }
+.callout { border-left: 4px solid var(--danger); padding: 4px 0 4px 14px; margin: 14px 0; }
+footer { max-width: 1120px; margin: 0 auto; padding: 24px 20px 40px; color: var(--muted); font-size: 0.88rem; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Sections">
+  <div class="nav-in">
+    <span class="brand">Bank campaign model</span>
+    <a href="#sim">Call list</a>
+    <a href="#data">Data</a>
+    <a href="#models">Models</a>
+    <a href="#customers">Customers</a>
+    <a href="#advice">Recommendation</a>
+  </div>
+</nav>
+
+<main>
+
+<section id="sim" class="hero">
+  <h1>Who should the bank call?</h1>
+  <p class="lede">A bank can only make so many phone calls for a term deposit campaign. Our model ranks customers by their chance of saying yes. Move the slider to choose how many customers to call, and see how many subscribers that reaches and what it earns.</p>
+
+  <div class="sim">
+    <div class="panel">
+      <div class="field">
+        <label for="pct">Share of customers called <output id="pctOut">20%</output></label>
+        <input id="pct" type="range" min="1" max="100" step="0.1" value="20">
+      </div>
+      <div class="pair">
+        <div class="field">
+          <label for="val">Value of a subscription</label>
+          <input id="val" type="number" min="0" step="1" value="10">
+        </div>
+        <div class="field">
+          <label for="cost">Cost of a call</label>
+          <input id="cost" type="number" min="0" step="0.5" value="1">
+        </div>
+      </div>
+      <button class="btn" id="useThr" type="button">Use the model's chosen cut-off (19.9% called)</button>
+
+      <div style="margin-top:22px">
+        <div class="profit">
+          <div class="num" id="profitNum">556</div>
+          <div class="cap">profit per 1,000 customers (units)</div>
+        </div>
+        <dl class="reads">
+          <div><dt>Customers called</dt><dd id="rCalls">200 per 1,000</dd></div>
+          <div><dt>Subscribers reached</dt><dd id="rReach">67.1%</dd></div>
+          <div><dt>Gain over random calling</dt><dd id="rLift">3.36 times</dd></div>
+          <div><dt>Profit if everyone is called</dt><dd id="rAll">127</dd></div>
+          <div><dt>Best share to call at these costs</dt><dd id="rBest">-</dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="charts">
+      <figure>
+        <svg id="gainsChart" class="chart" viewBox="0 0 520 300" role="img" aria-label="Cumulative gains chart"></svg>
+        <figcaption>Calling the customers the model ranks highest reaches subscribers much faster than calling at random.</figcaption>
+      </figure>
+      <figure>
+        <svg id="profitChart" class="chart" viewBox="0 0 520 300" role="img" aria-label="Profit against share called"></svg>
+        <figcaption>Profit rises while calls reach likely subscribers, then falls once calls go mostly to people who say no.</figcaption>
+      </figure>
+    </div>
+  </div>
+  <p class="note" style="margin-top:14px">Results come from the held-out test set (8,236 customers, 928 subscribers). The curve is drawn between the ten ranked groups (deciles) in the notebook, so values between group edges are interpolated. Costs are assumptions, not bank figures.</p>
+</section>
+
+<section id="data">
+  <h2>The data and the traps in it</h2>
+  <p>UCI Bank Marketing: 41,176 phone contacts after removing 12 duplicates. One row is one call to one client. The task is to predict, before the call, whether the client subscribes.</p>
+  <div class="two">
+    <figure>
+      <h3>Only about one in nine says yes</h3>
+      <svg id="balanceChart" class="chart" viewBox="0 0 520 130" role="img" aria-label="Class balance"></svg>
+      <figcaption>A model that always answers "no" is right 88.7% of the time, so accuracy is not a useful score here. We use PR-AUC, ROC-AUC and lift.</figcaption>
+    </figure>
+    <figure>
+      <h3>Why call duration was removed</h3>
+      <svg id="leakChart" class="chart" viewBox="0 0 520 190" role="img" aria-label="Model score with and without duration"></svg>
+      <figcaption>Call length is only known after the call ends. Adding it lifts ROC-AUC from 0.80 to 0.95, which is leakage, so the final model does not use it.</figcaption>
+    </figure>
+  </div>
+  <ul class="plain" style="margin-top:18px">
+    <li>The code 999 in <em>pdays</em> means "never contacted" (96.3% of rows). It became a yes/no flag.</li>
+    <li>"Unknown" answers in job, education, default, housing and loan were kept as their own category.</li>
+    <li>The number of contacts in this campaign was capped at 10 because a few clients had up to 56.</li>
+  </ul>
+</section>
+
+<section id="models">
+  <h2>Five models, compared fairly</h2>
+  <p>Every model was tested with stratified 5-fold cross-validation on the training data, with all preprocessing inside the pipeline. The test set was used once at the end.</p>
+  <div class="seg" role="group" aria-label="Score source">
+    <button type="button" id="viewCV" aria-pressed="false">Cross-validation</button>
+    <button type="button" id="viewTest" aria-pressed="true">Test set</button>
+  </div>
+  <div class="two">
+    <figure>
+      <svg id="modelChart" class="chart" viewBox="0 0 520 250" role="img" aria-label="PR-AUC by model"></svg>
+      <figcaption>PR-AUC. The dashed line is a random ranking (0.113).</figcaption>
+    </figure>
+    <div>
+      <table id="modelTable"></table>
+      <p class="note" style="margin-top:12px">Random Forest and Gradient Boosting are close. The tuned Gradient Boosting model was chosen because it had the best cross-validated PR-AUC.</p>
+      <p><strong>SMOTE did not help.</strong> Gradient Boosting scored 0.463 PR-AUC without it and 0.453 with it, so imbalance is handled with a cost-based cut-off instead.</p>
+    </div>
+  </div>
+</section>
+
+<section id="customers">
+  <h2>Which customers rise to the top</h2>
+  <div class="two">
+    <figure>
+      <h3>Yes-rate by ranked group</h3>
+      <svg id="liftChart" class="chart" viewBox="0 0 520 280" role="img" aria-label="Lift by decile"></svg>
+      <figcaption>Group 1 (the highest-ranked 10%) says yes 52.2% of the time, 4.6 times the average. Group 10 says yes 2.4% of the time.</figcaption>
+    </figure>
+    <figure>
+      <h3>Who is over-represented in the top 20%</h3>
+      <svg id="segChart" class="chart" viewBox="0 0 520 280" role="img" aria-label="Segment ratios"></svg>
+      <figcaption>Ratio of a group's share in the top 20% to its share overall. Above 1 means the model favours it.</figcaption>
+    </figure>
+  </div>
+
+  <h3 style="margin-top:28px">Fairness check on age</h3>
+  <p>Selection follows real yes-rates, but strongly at the extremes. All 110 customers over 65 were selected, which needs human review for a financial product.</p>
+  <figure>
+    <svg id="fairChart" class="chart" viewBox="0 0 640 260" role="img" aria-label="Selection rate and actual yes-rate by age group"></svg>
+    <figcaption>Share of each age group placed in the top-20% call list, next to that group's actual yes-rate. Over 65 has only 110 customers.</figcaption>
+  </figure>
+</section>
+
+<section id="advice">
+  <h2>Recommendation and limits</h2>
+  <div class="two">
+    <div>
+      <h3>What the bank should do</h3>
+      <ul class="plain">
+        <li>Rank customers with the tuned Gradient Boosting model and call roughly the top 20%. On test data that reaches about two thirds of subscribers.</li>
+        <li>Prioritise earlier successes, cellular contacts, students and retired clients, and March, September and October. Cut mass calling in May.</li>
+        <li>Pilot first: top 20% against a random group, then compare real conversion.</li>
+        <li>Replace the assumed costs with real ones and recompute the cut-off.</li>
+        <li>Add human review before contacting older customers, and retrain regularly.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What to keep in mind</h3>
+      <div class="callout">
+        <strong>Economic indicators dominate.</strong> The data run from 2008 to 2010 and the model leans on indicators such as <em>nr.employed</em>. They partly stand in for the time period, so a random split probably makes scores look better than they would on a future campaign.
+      </div>
+      <ul class="plain">
+        <li>One hold-out set with 928 subscribers, so scores carry some uncertainty.</li>
+        <li>Profit depends on assumed values (call cost 1, subscription worth 10).</li>
+        <li>The model finds patterns, not causes.</li>
+        <li>Probabilities were used to rank and were not checked for calibration.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer>IT3091 Machine Learning, Banking and Finance. Data: UCI Bank Marketing (Moro, Rita and Cortez, 2014). All figures come from the project notebook.</footer>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  var CAPS = [0, 0.463, 0.671, 0.746, 0.791, 0.836, 0.881, 0.909, 0.943, 0.978, 1];
+  var SUBS_PER_1000 = 928 / 8236 * 1000;
+  var THR_SHARE = 19.9;
+
+  function $(id) { return document.getElementById(id); }
+  function fmt(n, d) { return Number(n).toLocaleString("en-US", { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) { e.setAttribute(k, attrs[k]); }
+    if (text !== undefined) { e.textContent = text; }
+    return e;
+  }
+  function clear(svg) { while (svg.firstChild) { svg.removeChild(svg.firstChild); } }
+
+  function capture(p) {
+    var x = Math.max(0, Math.min(100, p)) / 10;
+    var i = Math.min(9, Math.floor(x));
+    var f = x - i;
+    return CAPS[i] + (CAPS[i + 1] - CAPS[i]) * f;
+  }
+  function profit(p, v, c) { return v * capture(p) * SUBS_PER_1000 - c * p * 10; }
+  function best(v, c) {
+    var bp = 0, bv = -Infinity;
+    for (var p = 0; p <= 100; p += 0.5) {
+      var pr = profit(p, v, c);
+      if (pr > bv) { bv = pr; bp = p; }
+    }
+    return { p: bp, v: bv };
+  }
+
+  /* ---------- simulator ---------- */
+  var W = 520, H = 300, M = { l: 48, r: 16, t: 14, b: 40 };
+  function sx(p) { return M.l + (p / 100) * (W - M.l - M.r); }
+
+  function drawGains(p) {
+    var svg = $("gainsChart"); clear(svg);
+    function sy(v) { return H - M.b - v * (H - M.t - M.b); }
+    for (var g = 0; g <= 1; g += 0.25) {
+      svg.appendChild(el("line", { x1: M.l, x2: W - M.r, y1: sy(g), y2: sy(g), "class": "grid" }));
+      svg.appendChild(el("text", { x: M.l - 8, y: sy(g) + 4, "text-anchor": "end" }, Math.round(g * 100) + "%"));
+    }
+    for (var q = 0; q <= 100; q += 25) {
+      svg.appendChild(el("text", { x: sx(q), y: H - M.b + 18, "text-anchor": "middle" }, q + "%"));
+    }
+    svg.appendChild(el("line", { x1: M.l, x2: W - M.r, y1: sy(0), y2: sy(0), "class": "axis" }));
+    svg.appendChild(el("line", { x1: sx(0), x2: sx(100), y1: sy(0), y2: sy(1), "class": "random" }));
+    var pts = CAPS.map(function (c, i) { return sx(i * 10) + "," + sy(c); }).join(" ");
+    svg.appendChild(el("polyline", { points: pts, "class": "model" }));
+    svg.appendChild(el("line", { x1: sx(p), x2: sx(p), y1: sy(0), y2: sy(capture(p)), "class": "guide" }));
+    svg.appendChild(el("line", { x1: sx(0), x2: sx(p), y1: sy(capture(p)), y2: sy(capture(p)), "class": "guide" }));
+    svg.appendChild(el("circle", { cx: sx(p), cy: sy(capture(p)), r: 6, "class": "mark" }));
+    svg.appendChild(el("text", { x: W / 2, y: H - 6, "text-anchor": "middle" }, "Share of customers called"));
+    svg.appendChild(el("text", { x: 12, y: H / 2, "text-anchor": "middle", transform: "rotate(-90 12 " + (H / 2) + ")" }, "Share of subscribers reached"));
+    svg.appendChild(el("text", { x: sx(62), y: sy(0.97), "class": "strong" }, "Model"));
+    svg.appendChild(el("text", { x: sx(70), y: sy(0.5), fill: "currentColor" }, "Random calling"));
+  }
+
+  function drawProfit(p, v, c) {
+    var svg = $("profitChart"); clear(svg);
+    var vals = [], lo = 0, hi = 0, i;
+    for (i = 0; i <= 100; i += 1) { var pv = profit(i, v, c); vals.push(pv); lo = Math.min(lo, pv); hi = Math.max(hi, pv); }
+    if (hi - lo < 1) { hi = lo + 1; }
+    var pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
+    function sy(val) { return H - M.b - (val - lo) / (hi - lo) * (H - M.t - M.b); }
+    var step = niceStep((hi - lo) / 4);
+    for (var g = Math.ceil(lo / step) * step; g <= hi; g += step) {
+      svg.appendChild(el("line", { x1: M.l, x2: W - M.r, y1: sy(g), y2: sy(g), "class": g === 0 ? "axis" : "grid" }));
+      svg.appendChild(el("text", { x: M.l - 8, y: sy(g) + 4, "text-anchor": "end" }, fmt(g)));
+    }
+    for (var q = 0; q <= 100; q += 25) {
+      svg.appendChild(el("text", { x: sx(q), y: H - M.b + 18, "text-anchor": "middle" }, q + "%"));
+    }
+    var pts = vals.map(function (val, k) { return sx(k) + "," + sy(val); }).join(" ");
+    svg.appendChild(el("polyline", { points: pts, "class": "model" }));
+    var b = best(v, c);
+    svg.appendChild(el("line", { x1: sx(p), x2: sx(p), y1: sy(lo), y2: sy(profit(p, v, c)), "class": "guide" }));
+    svg.appendChild(el("circle", { cx: sx(p), cy: sy(profit(p, v, c)), r: 6, "class": "mark" }));
+    svg.appendChild(el("circle", { cx: sx(b.p), cy: sy(b.v), r: 4, fill: "none", stroke: "currentColor", "stroke-width": 1.5, style: "color:var(--amber)" }));
+    svg.appendChild(el("text", { x: Math.min(sx(b.p) + 8, W - 90), y: sy(b.v) - 8, "class": "strong" }, "best: " + fmt(b.p) + "%"));
+    svg.appendChild(el("text", { x: W / 2, y: H - 6, "text-anchor": "middle" }, "Share of customers called"));
+    svg.appendChild(el("text", { x: 12, y: H / 2, "text-anchor": "middle", transform: "rotate(-90 12 " + (H / 2) + ")" }, "Profit per 1,000 customers"));
+  }
+  function niceStep(raw) {
+    var mag = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1e-9))));
+    var n = raw / mag;
+    return (n < 1.5 ? 1 : n < 3.5 ? 2 : n < 7.5 ? 5 : 10) * mag;
+  }
+
+  function update() {
+    var p = parseFloat($("pct").value);
+    var v = Math.max(0, parseFloat($("val").value) || 0);
+    var c = Math.max(0, parseFloat($("cost").value) || 0);
+    $("pctOut").textContent = fmt(p, 1) + "%";
+    var cap = capture(p);
+    var pr = profit(p, v, c);
+    $("profitNum").textContent = fmt(pr);
+    $("rCalls").textContent = fmt(p * 10) + " per 1,000";
+    $("rReach").textContent = fmt(cap * 100, 1) + "%";
+    $("rLift").textContent = fmt(cap / (p / 100), 2) + " times";
+    $("rAll").textContent = fmt(profit(100, v, c));
+    var b = best(v, c);
+    $("rBest").textContent = fmt(b.p) + "% (profit " + fmt(b.v) + ")";
+    drawGains(p); drawProfit(p, v, c);
+  }
+  ["pct", "val", "cost"].forEach(function (id) { $(id).addEventListener("input", update); });
+  $("useThr").addEventListener("click", function () { $("pct").value = THR_SHARE; update(); });
+
+  /* ---------- generic horizontal bars ---------- */
+  function hbars(svgId, items, opt) {
+    var svg = $(svgId); clear(svg);
+    var w = 520, rowH = opt.rowH || 34, left = opt.left || 150, top = 8;
+    var max = opt.max;
+    var h = top + items.length * rowH + (opt.refLabel ? 22 : 8);
+    svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+    items.forEach(function (it, i) {
+      var y = top + i * rowH;
+      var bw = (it.value / max) * (w - left - 60);
+      svg.appendChild(el("text", { x: left - 10, y: y + rowH / 2 + 3, "text-anchor": "end" }, it.label));
+      svg.appendChild(el("rect", { x: left, y: y + 5, width: Math.max(bw, 1), height: rowH - 12, rx: 2, "class": it["class"] || "b-accent" }));
+      svg.appendChild(el("text", { x: left + bw + 8, y: y + rowH / 2 + 3, "class": "strong" }, it.text));
+    });
+    if (opt.ref !== undefined) {
+      var rx = left + (opt.ref / max) * (w - left - 60);
+      svg.appendChild(el("line", { x1: rx, x2: rx, y1: top, y2: top + items.length * rowH, "class": "refline" }));
+      if (opt.refLabel) { svg.appendChild(el("text", { x: rx, y: top + items.length * rowH + 16, "text-anchor": "middle" }, opt.refLabel)); }
+    }
+  }
+
+  /* ---------- data section ---------- */
+  hbars("balanceChart", [
+    { label: "No", value: 88.73, text: "88.73%", "class": "b-muted" },
+    { label: "Yes", value: 11.27, text: "11.27%", "class": "b-accent" }
+  ], { max: 100, left: 60, rowH: 44 });
+  hbars("leakChart", [
+    { label: "Without duration", value: 0.799, text: "0.799", "class": "b-accent" },
+    { label: "With duration", value: 0.950, text: "0.950", "class": "b-danger" }
+  ], { max: 1, left: 130, rowH: 52 });
+  var leakNote = el("text", { x: 130, y: 178 }, "ROC-AUC, 5-fold cross-validation on training data");
+  $("leakChart").appendChild(leakNote);
+
+  /* ---------- models ---------- */
+  var MODELS = ["Dummy baseline", "Logistic Regression", "Decision Tree", "Random Forest", "Gradient Boosting", "Gradient Boosting (tuned)"];
+  var DATA = {
+    cv:   { pr: [0.113, 0.446, 0.420, 0.465, 0.463, 0.469], roc: [0.500, 0.790, 0.781, 0.794, 0.799, 0.801] },
+    test: { pr: [0.113, 0.446, 0.460, 0.484, 0.490, 0.493], roc: [0.500, 0.800, 0.800, 0.806, 0.812, 0.814] }
+  };
+  var view = "test";
+  function drawModels() {
+    var d = DATA[view];
+    var bi = d.pr.indexOf(Math.max.apply(null, d.pr));
+    var items = MODELS.map(function (m, i) {
+      return { label: m, value: d.pr[i], text: d.pr[i].toFixed(3), "class": i === 0 ? "b-muted" : (i === bi ? "b-accent" : "b-accent") };
+    });
+    hbars("modelChart", items, { max: 0.6, left: 175, rowH: 36, ref: 0.113, refLabel: "random 0.113" });
+    var html = "<tr><th>Model</th><th>ROC-AUC</th><th>PR-AUC</th></tr>";
+    MODELS.forEach(function (m, i) {
+      html += "<tr" + (i === bi ? " class=\"best\"" : "") + "><td>" + m + "</td><td>" + d.roc[i].toFixed(3) + "</td><td>" + d.pr[i].toFixed(3) + "</td></tr>";
+    });
+    $("modelTable").innerHTML = html;
+    $("viewCV").setAttribute("aria-pressed", view === "cv");
+    $("viewTest").setAttribute("aria-pressed", view === "test");
+  }
+  $("viewCV").addEventListener("click", function () { view = "cv"; drawModels(); });
+  $("viewTest").addEventListener("click", function () { view = "test"; drawModels(); });
+
+  /* ---------- customers ---------- */
+  function drawLift() {
+    var svg = $("liftChart"); clear(svg);
+    var lifts = [4.63, 2.08, 0.74, 0.45, 0.45, 0.45, 0.28, 0.33, 0.36, 0.22];
+    var rate = ["52.2%", "23.4%", "8.4%", "5.1%", "5.1%", "5.1%", "3.2%", "3.8%", "4.0%", "2.4%"];
+    var w = 520, h = 280, l = 40, r = 10, t = 22, b = 40, max = 5;
+    function sy(v) { return h - b - v / max * (h - t - b); }
+    for (var g = 0; g <= 5; g += 1) {
+      svg.appendChild(el("line", { x1: l, x2: w - r, y1: sy(g), y2: sy(g), "class": g === 0 ? "axis" : "grid" }));
+      svg.appendChild(el("text", { x: l - 8, y: sy(g) + 4, "text-anchor": "end" }, String(g)));
+    }
+    var bw = (w - l - r) / 10;
+    lifts.forEach(function (v, i) {
+      var x = l + i * bw + 5;
+      svg.appendChild(el("rect", { x: x, y: sy(v), width: bw - 10, height: sy(0) - sy(v), rx: 2, "class": v >= 1 ? "b-accent" : "b-muted" }));
+      svg.appendChild(el("text", { x: x + (bw - 10) / 2, y: sy(v) - 5, "text-anchor": "middle", "class": "strong" }, rate[i]));
+      svg.appendChild(el("text", { x: x + (bw - 10) / 2, y: h - b + 16, "text-anchor": "middle" }, String(i + 1)));
+    });
+    svg.appendChild(el("line", { x1: l, x2: w - r, y1: sy(1), y2: sy(1), "class": "refline" }));
+    svg.appendChild(el("text", { x: w - r, y: sy(1) - 5, "text-anchor": "end" }, "average (lift 1)"));
+    svg.appendChild(el("text", { x: (l + w) / 2, y: h - 6, "text-anchor": "middle" }, "Ranked group (1 = most likely to subscribe). Bars show lift, labels show yes-rate"));
+  }
+  hbars("segChart", [
+    { label: "Month: September", value: 5.08, text: "5.1x" },
+    { label: "Month: March", value: 4.93, text: "4.9x" },
+    { label: "Earlier campaign success", value: 4.88, text: "4.9x" },
+    { label: "Month: October", value: 4.88, text: "4.9x" },
+    { label: "Job: student", value: 3.27, text: "3.3x" },
+    { label: "Job: retired", value: 2.40, text: "2.4x" },
+    { label: "Contact: cellular", value: 1.40, text: "1.4x" },
+    { label: "Month: May", value: 0.51, text: "0.5x", "class": "b-amber" },
+    { label: "Job: blue-collar", value: 0.41, text: "0.4x", "class": "b-amber" }
+  ], { max: 6, left: 175, rowH: 26, ref: 1, refLabel: "1.0 = same as overall" });
+
+  function drawFair() {
+    var svg = $("fairChart"); clear(svg);
+    var groups = ["25 and under", "26-35", "36-45", "46-55", "56-65", "Over 65"];
+    var sel = [49.4, 22.0, 12.6, 14.1, 27.9, 100.0];
+    var act = [18.9, 12.4, 9.1, 7.5, 14.3, 50.0];
+    var n = ["328", "2,953", "2,594", "1,655", "596", "110"];
+    var w = 640, h = 260, l = 44, r = 10, t = 16, b = 56, max = 100;
+    function sy(v) { return h - b - v / max * (h - t - b); }
+    for (var g = 0; g <= 100; g += 25) {
+      svg.appendChild(el("line", { x1: l, x2: w - r, y1: sy(g), y2: sy(g), "class": g === 0 ? "axis" : "grid" }));
+      svg.appendChild(el("text", { x: l - 8, y: sy(g) + 4, "text-anchor": "end" }, g + "%"));
+    }
+    var gw = (w - l - r) / groups.length;
+    groups.forEach(function (name, i) {
+      var x0 = l + i * gw + 12, bw = (gw - 24) / 2;
+      svg.appendChild(el("rect", { x: x0, y: sy(sel[i]), width: bw, height: sy(0) - sy(sel[i]), rx: 2, "class": "b-accent" }));
+      svg.appendChild(el("rect", { x: x0 + bw + 2, y: sy(act[i]), width: bw, height: sy(0) - sy(act[i]), rx: 2, "class": "b-amber" }));
+      svg.appendChild(el("text", { x: x0 + bw / 2, y: sy(sel[i]) - 4, "text-anchor": "middle", "class": "strong" }, sel[i].toFixed(0) + "%"));
+      svg.appendChild(el("text", { x: x0 + bw * 1.5 + 2, y: sy(act[i]) - 4, "text-anchor": "middle", "class": "strong" }, act[i].toFixed(0) + "%"));
+      svg.appendChild(el("text", { x: x0 + bw + 1, y: h - b + 16, "text-anchor": "middle" }, name));
+      svg.appendChild(el("text", { x: x0 + bw + 1, y: h - b + 30, "text-anchor": "middle" }, "n = " + n[i]));
+    });
+    svg.appendChild(el("rect", { x: l + 4, y: h - 14, width: 10, height: 10, "class": "b-accent" }));
+    svg.appendChild(el("text", { x: l + 18, y: h - 5 }, "Selected for call list"));
+    svg.appendChild(el("rect", { x: l + 150, y: h - 14, width: 10, height: 10, "class": "b-amber" }));
+    svg.appendChild(el("text", { x: l + 164, y: h - 5 }, "Actual yes-rate"));
+  }
+
+  update(); drawModels(); drawLift(); drawFair();
+})();
+</script>
+</body>
+</html>
